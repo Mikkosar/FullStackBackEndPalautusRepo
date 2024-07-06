@@ -48,7 +48,7 @@ function App() {
     }
 
     else {
-      const userResponse = confirm(`${newName} is already added to phonebook or number was not given`);
+      const userResponse = confirm(`${newName} is already added to phonebook or number was not given, if you confirm, number is updated`);
     
       if (userResponse) {
         const newperson = persons.find(person => person.name === newName);
@@ -67,7 +67,7 @@ function App() {
           )
           .catch(error => {
             console.log(error)
-            setMessage(`Information of ${newName} has already been removed from server`),
+            setMessage(`Updating information of ${newName} has failed`),
             setTimeout(() => {
               setMessage(null)
             }, 2000)
@@ -95,6 +95,10 @@ function App() {
         )
         .catch(error => {
           console.log("delete error")
+          setMessage(`Information of ${newName} has already been removed from server`),
+          setTimeout(() => {
+            setMessage(null)
+          }, 2000)
         })
 
     setPersons(persons.filter(person => person.id !== id))

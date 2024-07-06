@@ -15,36 +15,37 @@ app.use(express.json());
 app.use(cors());
 app.use(express.static('dist'))
 
-const generateId = () => {
-    const maxId = persons.length > 0
-      ? Math.max(...persons.map(n => Number(n.id)))
-      : 0
-    return String(maxId + 15)
-};
-
-app.get('/info', (request, response) => {
+app.get('/info', async (request, response) => {
     const date = new Date();
+    const stats = await Person.countDocuments({})
     response.send(
-        `<h3>Phonebook has info for ${persons.length} people</h3>
+        `<h3>Phonebook has info for ${stats} people</h3>
             <p>${date}</p>`
     );
 });
 
-app.get('/api/persons', (request, response) => {
+app.get('/api/persons', (request, response, next) => {
     Person.find({})
         .then(p => {
             response.json(p);
-        });
+        })
+        .catch(error => next(error))
 });
 
-app.get('/api/persons/:id', (request, resposne) => {
+app.get('/api/persons/:id', (request, resposne, next) => {
     Person.findById(request.params.id)
         .then(p => {
-            resposne.json(p);
-        });
+            if (p) {
+                resposne.json(p);
+            }
+            else {
+                resposne.status(404).end();
+            }
+        })
+        .catch(error => next(error));
 });
 
-app.post('/api/persons', (request, response) => {
+app.post('/api/persons', (request, response, next) => {
     const body = request.body;
 
     if (!body.name || !body.number) {
@@ -61,15 +62,54 @@ app.post('/api/persons', (request, response) => {
     person.save()
         .then(savedPerson => {
             response.json(savedPerson);
-        });
+        })
+        .catch(error => next(error));
 });
 
 app.delete('/api/persons/:id', (req, res) => {
-    const id = req.params.id;
-    persons = persons.filter(p => p.id !== id);
+    Person.findByIdAndDelete(req.params.id)
+        .then(result => {
+            res.status(204).end();
+        })
 
-    res.status(204).end();
 });
+
+app.put('/api/persons/:id', (req, res, next) => {
+    const body = req.body;
+
+    const person = {
+        name: body.name,
+        number: body.number,
+    };
+
+    Person.findByIdAndUpdate(req.params.id, person, { new: true })
+        .then(updatedNumber => {
+            res.json(updatedNumber);
+        })
+        .catch(error => next(error));
+});
+
+const uknownEndpoint = (req, res) => {
+    res.status(404).send({ error: 'uknownk endpoint' });
+};
+
+app.use(uknownEndpoint);
+
+const errorHandler = (error, req, res, next) => {
+    console.error(error.message);
+
+    if (error.name === 'CastError') {
+        return res.status(400).send({ error: 'malformatted id' });
+    }
+
+    if (error.name === 'DatabaseError') {
+        return res.status(500).send({ error: "the database save operation failed" })
+    }
+
+    next(error);
+};
+
+app.use(errorHandler);
 
 const PORT = process.env.PORT;
 app.listen(PORT, () => {
