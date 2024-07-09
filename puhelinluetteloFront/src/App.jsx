@@ -43,7 +43,11 @@ function App() {
           }, 2000)
         )
         .catch(error => {
-          console.log("post error");
+          console.log(error.response.data);
+          setMessage(error.response.data.error),
+          setTimeout(() => {
+            setMessage(null)
+          }, 2000)
         });
     }
 

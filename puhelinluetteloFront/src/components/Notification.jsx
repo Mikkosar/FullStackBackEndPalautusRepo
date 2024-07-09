@@ -3,7 +3,15 @@ const Notification = ({ message }) => {
         return null;
     }
 
-    if (message.includes('has already been removed from server')) {
+    else if (message.includes('has already been removed from server')) {
+        return (
+            <div className="errorNotification">
+                {message}
+            </div>
+        );
+    }
+
+    else if (message.includes('Person validation failed')) {
         return (
             <div className="errorNotification">
                 {message}
